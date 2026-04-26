@@ -33,25 +33,32 @@ public class CampaignService {
     public String startCampaign(Long campaignId) {
 
         Campaign campaign = campaignRepository.findById(campaignId)
-                .orElseThrow( () -> new RuntimeException("Campaign Not Found!"));
+                .orElseThrow(() -> new RuntimeException("Campaign Not Found!"));
 
         List<LeadDTO> leads = leadClient.getAllLeads();
 
-        for(LeadDTO lead: leads) {
-            if(!lead.getRegion().equalsIgnoreCase(campaign.getRegion())) {
+        for (LeadDTO lead : leads) {
+            if (!lead.getRegion().equalsIgnoreCase(campaign.getRegion())) {
                 continue;
             }
+
+            String subject = campaign.getEmailSubject();
+
+            String body = campaign.getEmailBody()
+                    .replace("{name}", lead.getName());
+
             emailClient.sendEmail(
                     lead.getEmail(),
-                    "campaign: " + campaign.getName(),
-                    "hello" + lead.getName() + ", this is a campaign message!"
+                    subject,
+                    body
             );
 
             smsClient.sendSms(
                     lead.getPhone(),
-                    "Hi," + lead.getName() + ", this is an SMS campaign!"
+                    "Hi " + lead.getName() + ", this is an SMS campaign!"
             );
         }
+
         campaign.setStatus("RUNNING");
         campaignRepository.save(campaign);
 
@@ -105,6 +112,9 @@ public class CampaignService {
         dto.setStatus(campaign.getStatus());
         dto.setStartDate(campaign.getStartDate());
         dto.setEndDate(campaign.getEndDate());
+
+        dto.setEmailSubject(campaign.getEmailSubject());
+        dto.setEmailBody(campaign.getEmailBody());
         return dto;
     }
 
@@ -116,6 +126,9 @@ public class CampaignService {
         campaign.setStatus(dto.getStatus());
         campaign.setStartDate(dto.getStartDate());
         campaign.setEndDate(dto.getEndDate());
+
+        campaign.setEmailSubject(dto.getEmailSubject());
+        campaign.setEmailBody(dto.getEmailBody());
         return campaign;
     }
 }

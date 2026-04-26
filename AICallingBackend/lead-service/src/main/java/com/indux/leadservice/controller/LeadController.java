@@ -28,7 +28,7 @@ public class LeadController {
         return leadService.processCSV(file);
     }
 
-    @GetMapping({"", "/"})
+    @GetMapping({"", "/"})  
     public PagedResponse<LeadDTO> getAllLeads(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size) {

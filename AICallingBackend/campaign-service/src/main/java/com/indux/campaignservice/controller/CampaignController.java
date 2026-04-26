@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.*;
 public class CampaignController {
     private final CampaignService campaignService;
 
-    public CampaignController(CampaignService campaignService) {
-        this.campaignService = campaignService;
+    public CampaignController(CampaignService campaignService1) {
+        this.campaignService = campaignService1;
     }
 
     @PostMapping("/{id}/start")

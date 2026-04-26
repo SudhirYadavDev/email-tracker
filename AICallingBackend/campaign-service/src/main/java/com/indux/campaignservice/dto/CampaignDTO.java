@@ -20,5 +20,9 @@ public class CampaignDTO {
     private String status;
     private LocalDate startDate;
     private LocalDate endDate;
+
+    private String emailSubject;
+    private String emailBody;
+
     private List<LeadDTO> leads;
 }

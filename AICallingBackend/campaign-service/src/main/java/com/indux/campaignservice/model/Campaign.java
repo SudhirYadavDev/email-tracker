@@ -1,10 +1,6 @@
 package com.indux.campaignservice.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import lombok.*;
 
@@ -29,4 +25,8 @@ public class Campaign {
     private String status;
     private LocalDate startDate;
     private LocalDate endDate;
+
+    private String emailSubject;
+    @Column(length = 5000)
+    private String emailBody;
 }
