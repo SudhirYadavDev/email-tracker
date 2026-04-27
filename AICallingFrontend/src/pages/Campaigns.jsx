@@ -20,7 +20,7 @@ const Campaigns = () => {
   // Fetch all campaigns
   const fetchCampaigns = async () => {
     try {
-      const res = await campaignAPI.get("/");
+      const res = await campaignAPI.get(""); //Removed the forward slash within the double-inverted commas
       setCampaigns(res.data);
     } catch (error) {
       console.error("Error fetching campaigns:", error);
