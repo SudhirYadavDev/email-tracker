@@ -99,9 +99,13 @@ const CampaignDetail = () => {
     }
     setIsSending(true);
     try {
-      await campaignAPI.post(`/${id}/start`);
+      await campaignAPI.post(`/${id}/start`, {
+      emailBody
+    });
+
       const res = await emailAPI.get("/logs");
       setLogs(res.data);
+
       alert("Emails sent successfully!");
     } catch (error) {
       console.error("Error sending emails:", error);
