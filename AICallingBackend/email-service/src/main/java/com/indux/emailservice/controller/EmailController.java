@@ -59,4 +59,42 @@ public class EmailController {
                 .filter(log -> "FAILED".equals(log.getStatus()))
                 .toList();
     }
+
+    @GetMapping("/logs")
+    public List<EmailLog> getAllLogs() {
+        return emailLogRepository.findAll();
+    }
+
+    @GetMapping("/opened")
+    public List<EmailLog> getOpenedEmails() {
+        return emailLogRepository.findAll()
+                .stream()
+                .filter(EmailLog::isOpened)
+                .toList();
+    }
+
+    @GetMapping("/not-opened")
+    public List<EmailLog> getNotOpenedEmails() {
+        return emailLogRepository.findAll()
+                .stream()
+                .filter(log -> !log.isOpened())
+                .toList();
+    }
+
+    @GetMapping("/stats")
+    public Map<String, Long> getStats() {
+
+        List<EmailLog> logs = emailLogRepository.findAll();
+
+        long total = logs.size();
+        long opened = logs.stream().filter(EmailLog::isOpened).count();
+        long failed = logs.stream().filter(l -> "FAILED".equals(l.getStatus())).count();
+
+        return Map.of(
+                "total", total,
+                "opened", opened,
+                "notOpened", total - opened,
+                "failed", failed
+        );
+    }
 }
