@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { campaignAPI } from "../services/api";
+import { campaignAPI, emailAPI } from "../services/api";
 
 const CampaignDetail = () => {
   const { id } = useParams();
@@ -12,6 +12,7 @@ const CampaignDetail = () => {
   const pageSize = 5;
   const [emailBody, setEmailBody] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [logs, setLogs] = useState([]);
 
   const fetchCampaign = async () => {
     try {
@@ -27,6 +28,19 @@ const CampaignDetail = () => {
   useEffect(() => {
     fetchCampaign();
   }, [id]);
+
+  useEffect(() => {
+  const fetchLogs = async () => {
+    try {
+      const res = await emailAPI.get("/logs");
+      setLogs(res.data);
+    } catch (err) {
+      console.error("Error fetching logs:", err);
+    }
+  };
+
+  fetchLogs();
+}, []);
 
   if (loading) {
     return (
@@ -85,7 +99,9 @@ const CampaignDetail = () => {
     }
     setIsSending(true);
     try {
-      await campaignAPI.post(`/${id}/send`, { emailBody });
+      await campaignAPI.post(`/${id}/start`);
+      const res = await emailAPI.get("/logs");
+      setLogs(res.data);
       alert("Emails sent successfully!");
     } catch (error) {
       console.error("Error sending emails:", error);
@@ -94,6 +110,14 @@ const CampaignDetail = () => {
       setIsSending(false);
     }
   };
+
+  const logMap = Object.fromEntries(
+  logs.map((l) => [l.email, l])
+);
+
+const getStatus = (email) => {
+  return logMap[email]?.status || "NOT_SENT";
+};
 
   return (
     <div className="relative z-10 max-w-7xl mx-auto">
@@ -148,7 +172,7 @@ const CampaignDetail = () => {
               disabled={isSending}
               className="mt-3 bg-blue-600 text-white px-6 py-2 rounded-xl"
             >
-              {isSending ? "Sending..." : "Send Email"}
+              {isSending ? "Sending..." : "Start Campaign"}
             </button>
           </div>
 
@@ -181,19 +205,40 @@ const CampaignDetail = () => {
               <th>Email</th>
               <th>Phone</th>
               <th>Region</th>
+              <th>Status</th>
             </tr>
           </thead>
 
           <tbody>
-            {currentLeads.map((lead, i) => (
-              <tr key={i}>
-                <td>{lead.name}</td>
-                <td>{lead.email}</td>
-                <td>{lead.phone}</td>
-                <td>{lead.region}</td>
-              </tr>
-            ))}
-          </tbody>
+  {currentLeads.map((lead, i) => {
+    const status = getStatus(lead.email);
+
+    return (
+      <tr key={i}>
+        <td>{lead.name}</td>
+        <td>{lead.email}</td>
+        <td>{lead.phone}</td>
+        <td>{lead.region}</td>
+
+        {/* ✅ ADD THIS */}
+        <td>
+          {status === "OPENED" && (
+            <span className="text-green-600">✅ Opened</span>
+          )}
+          {status === "NOT_OPENED" && (
+            <span className="text-yellow-500">⏳ Not Opened</span>
+          )}
+          {status === "FAILED" && (
+            <span className="text-red-500">❌ Failed</span>
+          )}
+          {status === "NOT_SENT" && (
+            <span className="text-gray-400">—</span>
+          )}
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
         </table>
 
         <div className="mt-3">
