@@ -1,5 +1,5 @@
 import React from "react";
-import { FaBars, FaBell } from "react-icons/fa";
+import {FaBell} from "react-icons/fa";
 
 const Navbar = ({ isOpen, setIsOpen }) => {
   return (
@@ -13,7 +13,7 @@ const Navbar = ({ isOpen, setIsOpen }) => {
           onClick={() => setIsOpen(!isOpen)}
           className="group p-2.5 text-xl text-gray-500 hover:text-indigo-600 bg-transparent hover:bg-white/80 rounded-2xl transition-all duration-500 ease-out focus:outline-none hover:shadow-[0_8px_16px_rgba(99,102,241,0.1)] border border-transparent hover:border-white/60"
         >
-          <FaBars className="transition-transform duration-500 group-hover:scale-110" />
+          
         </button>
       </div>
 

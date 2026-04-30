@@ -7,7 +7,7 @@ const MainLayout = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-slate-50 text-gray-800 font-sans">
-      <Sidebar isOpen={isOpen} />
+      <Sidebar isOpen={isOpen} setIsOpen={setIsOpen} />
     
       <div className="flex-1 flex flex-col overflow-hidden">
         <Navbar isOpen={isOpen} setIsOpen={setIsOpen} />

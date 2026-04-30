@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { leadAPI } from "../services/api";
+import { leadAPI, emailAPI } from "../services/api";
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
@@ -9,6 +9,7 @@ const Leads = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const pageSize = 5; // can adjust as needed
+  const [logs, setLogs] = useState([]);
 
   const fetchLeads = async (page = 0) => {
     try {
@@ -24,6 +25,19 @@ const Leads = () => {
   useEffect(() => {
     fetchLeads();
   }, []);
+
+  useEffect(() => {
+  const fetchLogs = async () => {
+    try {
+      const res = await emailAPI.get("/logs");
+      setLogs(res.data);
+    } catch (err) {
+      console.error("Error fetching logs:", err);
+    }
+  };
+
+  fetchLogs();
+}, []);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -57,6 +71,14 @@ const Leads = () => {
       fetchLeads(page);
     }
   };
+
+  const logMap = Object.fromEntries(
+  logs.map((l) => [l.email, l])
+);
+
+const getStatus = (email) => {
+  return logMap[email]?.status || "NOT_SENT";
+};
 
   return (
     <div className="relative z-10 max-w-7xl mx-auto">
@@ -101,17 +123,41 @@ const Leads = () => {
                 <th className="p-4 pl-2">Name</th>
                 <th className="p-4">Email</th>
                 <th className="p-4">Phone</th>
+                <th className="p-4">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200/60">
-              {leads.map((lead, index) => (
-                <tr key={index} className="hover:bg-indigo-50/40 transition-colors duration-300 group/row">
-                  <td className="p-4 pl-2 font-bold text-gray-800">{lead.name}</td>
-                  <td className="p-4 font-medium text-gray-600 text-sm">{lead.email}</td>
-                  <td className="p-4 font-medium text-gray-600 text-sm">{lead.phone}</td>
-                </tr>
-              ))}
-            </tbody>
+  {leads.map((lead, index) => {
+    const status = getStatus(lead.email);
+
+    return (
+      <tr
+        key={index}
+        className="hover:bg-indigo-50/40 transition-colors duration-300 group/row"
+      >
+        <td className="p-4 pl-2 font-bold text-gray-800">{lead.name}</td>
+        <td className="p-4 font-medium text-gray-600 text-sm">{lead.email}</td>
+        <td className="p-4 font-medium text-gray-600 text-sm">{lead.phone}</td>
+
+        {/* ✅ NEW STATUS COLUMN */}
+        <td className="p-4 text-sm font-medium">
+          {status === "OPENED" && (
+            <span className="text-green-600">✅ Opened</span>
+          )}
+          {status === "NOT_OPENED" && (
+            <span className="text-yellow-500">⏳ Not Opened</span>
+          )}
+          {status === "FAILED" && (
+            <span className="text-red-500">❌ Failed</span>
+          )}
+          {status === "NOT_SENT" && (
+            <span className="text-gray-400">—</span>
+          )}
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
           </table>
 
           {/* Pagination */}
