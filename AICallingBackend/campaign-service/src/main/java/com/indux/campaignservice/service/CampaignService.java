@@ -2,11 +2,11 @@ package com.indux.campaignservice.service;
 
 import com.indux.campaignservice.client.EmailClient;
 import com.indux.campaignservice.client.LeadClient;
-import com.indux.campaignservice.client.SmsClient;
 import com.indux.campaignservice.dto.CampaignDTO;
 import com.indux.campaignservice.dto.LeadDTO;
 import com.indux.campaignservice.model.Campaign;
 import com.indux.campaignservice.repository.CampaignRepository;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,53 +16,75 @@ import org.springframework.stereotype.Service;
 public class CampaignService {
 
     private final CampaignRepository campaignRepository;
-
     private final LeadClient leadClient;
     private final EmailClient emailClient;
-    private final SmsClient smsClient;
 
     public CampaignService(CampaignRepository campaignRepository,
                            LeadClient leadClient,
-                           EmailClient emailClient, SmsClient smsClient) {
+                           EmailClient emailClient) {
         this.campaignRepository = campaignRepository;
         this.leadClient = leadClient;
         this.emailClient = emailClient;
-        this.smsClient = smsClient;
     }
 
-    public String startCampaign(Long campaignId) {
+    public String startCampaign(Long campaignId, String dynamicBody, String dynamicSubject) {
 
         Campaign campaign = campaignRepository.findById(campaignId)
                 .orElseThrow(() -> new RuntimeException("Campaign Not Found!"));
 
         List<LeadDTO> leads = leadClient.getAllLeads();
 
+        String subject = (dynamicSubject != null && !dynamicSubject.isBlank())
+                ? dynamicSubject
+                : (campaign.getEmailSubject() != null
+                ? campaign.getEmailSubject()
+                : "Default Subject");
+
+        String template = (dynamicBody != null && !dynamicBody.isBlank())
+                ? dynamicBody
+                : campaign.getEmailBody();
+
+        if (template == null || template.isBlank()) {
+            template = "Hello {name}, this is a default campaign message.";
+        }
+
+        if (dynamicBody != null && !dynamicBody.isBlank()) {
+            campaign.setEmailBody(dynamicBody);
+        }
+        if (dynamicSubject != null && !dynamicSubject.isBlank()) {
+            campaign.setEmailSubject(dynamicSubject);
+        }
+        campaignRepository.save(campaign);
+
         for (LeadDTO lead : leads) {
-            if (!lead.getRegion().equalsIgnoreCase(campaign.getRegion())) {
+
+            if (lead.getRegion() == null ||
+                    campaign.getRegion() == null ||
+                    !lead.getRegion().equalsIgnoreCase(campaign.getRegion())) {
                 continue;
             }
 
-            String subject = campaign.getEmailSubject();
+            String name = (lead.getName() != null) ? lead.getName() : "Customer";
 
-            String body = campaign.getEmailBody()
-                    .replace("{name}", lead.getName());
+            String body = template.replace("{name}", name);
 
-            emailClient.sendEmail(
-                    lead.getEmail(),
-                    subject,
-                    body
-            );
+            try {
+                emailClient.sendEmail(
+                        lead.getEmail(),
+                        subject,
+                        body
+                );
 
-            smsClient.sendSms(
-                    lead.getPhone(),
-                    "Hi " + lead.getName() + ", this is an SMS campaign!"
-            );
+            } catch (Exception e) {
+                System.out.println("Error sending to: " + lead.getEmail());
+                e.printStackTrace();
+            }
         }
 
         campaign.setStatus("RUNNING");
         campaignRepository.save(campaign);
 
-        return "Campaign started and emails & SMS sent!";
+        return "Campaign started and emails sent!";
     }
 
     public CampaignDTO createCampaign(CampaignDTO dto) {
@@ -84,7 +106,10 @@ public class CampaignService {
 
         List<LeadDTO> leads = leadClient.getAllLeads()
                 .stream()
-                .filter(lead -> lead.getRegion().equalsIgnoreCase(campaign.getRegion()))
+                .filter(lead ->
+                        lead.getRegion() != null &&
+                                campaign.getRegion() != null &&
+                                lead.getRegion().equalsIgnoreCase(campaign.getRegion()))
                 .collect(Collectors.toList());
 
         CampaignDTO dto = mapToDTO(campaign);
@@ -93,7 +118,9 @@ public class CampaignService {
     }
 
     public CampaignDTO updateStatus(Long id, String status) {
-        Campaign campaign = this.campaignRepository.findById(id).orElseThrow(() -> new RuntimeException("Campaign Not Found!"));
+        Campaign campaign = this.campaignRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Campaign Not Found!"));
+
         campaign.setStatus(status);
         Campaign updated = this.campaignRepository.save(campaign);
         return this.mapToDTO(updated);
@@ -112,7 +139,6 @@ public class CampaignService {
         dto.setStatus(campaign.getStatus());
         dto.setStartDate(campaign.getStartDate());
         dto.setEndDate(campaign.getEndDate());
-
         dto.setEmailSubject(campaign.getEmailSubject());
         dto.setEmailBody(campaign.getEmailBody());
         return dto;
@@ -126,7 +152,6 @@ public class CampaignService {
         campaign.setStatus(dto.getStatus());
         campaign.setStartDate(dto.getStartDate());
         campaign.setEndDate(dto.getEndDate());
-
         campaign.setEmailSubject(dto.getEmailSubject());
         campaign.setEmailBody(dto.getEmailBody());
         return campaign;

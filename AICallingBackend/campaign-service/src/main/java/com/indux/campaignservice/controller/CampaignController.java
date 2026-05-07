@@ -2,24 +2,37 @@ package com.indux.campaignservice.controller;
 
 import com.indux.campaignservice.dto.CampaignDTO;
 import com.indux.campaignservice.service.CampaignService;
+
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@CrossOrigin(origins = "*")
-@RequestMapping({"/api/campaigns"})
+@CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping("/api/campaigns")
 public class CampaignController {
+
     private final CampaignService campaignService;
 
-    public CampaignController(CampaignService campaignService1) {
-        this.campaignService = campaignService1;
+    public CampaignController(CampaignService campaignService) {
+        this.campaignService = campaignService;
     }
 
     @PostMapping("/{id}/start")
-    public String startCampaign(@PathVariable Long id) {
-        return campaignService.startCampaign(id);
+    public String startCampaign(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> request
+    ) {
+        String emailBody = null;
+        String emailSubject = null;
+
+        if (request != null) {
+            emailBody = request.get("emailBody");
+            emailSubject = request.get("emailSubject"); // ✅ NEW
+        }
+
+        return campaignService.startCampaign(id, emailBody, emailSubject);
     }
 
     @PostMapping
@@ -37,7 +50,7 @@ public class CampaignController {
         return campaignService.getCampaignById(id);
     }
 
-    @PutMapping({"/{id}/status"})
+    @PutMapping("/{id}/status")
     public CampaignDTO updateStatus(@PathVariable Long id, @RequestParam String status) {
         return this.campaignService.updateStatus(id, status);
     }

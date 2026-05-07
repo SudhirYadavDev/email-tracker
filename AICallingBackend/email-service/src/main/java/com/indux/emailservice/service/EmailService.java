@@ -36,7 +36,7 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             String clickLink = baseUrl + "/api/email/click/" + log.getId()
-                    + "?redirect=http://localhost:5173/dashboard";
+                    + "?redirect=http://localhost:5173/";
 
             String trackingPixel = "<img src='" + baseUrl + "/api/email/track/"
                     + log.getId() + "?t=" + System.currentTimeMillis() + "' width='1' height='1' style='opacity:0;' />";

@@ -1,5 +1,6 @@
 package com.indux.campaignservice.client;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -13,24 +14,32 @@ import java.util.Map;
 public class EmailClient {
 
     private final RestTemplate restTemplate;
+    private final HttpServletRequest request;
 
-    public EmailClient(RestTemplate restTemplate) {
+    public EmailClient(RestTemplate restTemplate,
+                       HttpServletRequest request) {
+
         this.restTemplate = restTemplate;
+        this.request = request;
     }
 
     public void sendEmail(String to, String subject, String body) {
 
         String url = "http://localhost:8083/api/email/send";
 
-        Map<String, String> request = new HashMap<>();
-        request.put("to", to);
-        request.put("subject", subject);
-        request.put("body", body);
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("to", to);
+        requestBody.put("subject", subject);
+        requestBody.put("body", body);
+
+        String token = request.getHeader("Authorization");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", token);
 
-        HttpEntity<Map<String, String>> entity = new HttpEntity<>(request, headers);
+        HttpEntity<Map<String, String>> entity =
+                new HttpEntity<>(requestBody, headers);
 
         restTemplate.postForObject(url, entity, String.class);
     }
